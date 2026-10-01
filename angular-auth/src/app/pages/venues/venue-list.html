@@ -1,0 +1,37 @@
+<section class="page-head">
+  <div class="container">
+    <h1>Venues</h1>
+    <p>Auditoriums, arenas and halls ready for your next event.</p>
+  </div>
+</section>
+
+<section class="container section">
+  <form class="filters card" (submit)="$event.preventDefault(); load()">
+    <input class="input grow" type="search" placeholder="Search venues by city (e.g. Delhi, Noida)…"
+           [value]="city()" (input)="city.set(value($event))" />
+    <button class="btn btn-primary" type="submit">Search</button>
+    @if (city()) { <button class="btn btn-ghost" type="button" (click)="clear()">Clear</button> }
+  </form>
+
+  @if (!loaded()) {
+    <div class="grid">@for (i of [1, 2, 3]; track i) { <div class="card skeleton"></div> }</div>
+  } @else if (venues().length) {
+    <div class="grid">
+      @for (v of venues(); track v.id) {
+        <a class="card card-link" [routerLink]="['/venues', v.id]">
+          <div class="card-media venue-media" [style.background-image]="v.imageUrl ? 'url(' + v.imageUrl + ')' : null">
+            @if (!v.imageUrl) { <span class="media-label">{{ v.name.charAt(0) }}</span> }
+          </div>
+          <div class="card-body">
+            <span class="eyebrow">{{ v.city }}</span>
+            <h3>{{ v.name }}</h3>
+            <p class="meta">📍 {{ v.address }}</p>
+            <p class="meta">👥 Capacity {{ v.capacity }}</p>
+          </div>
+        </a>
+      }
+    </div>
+  } @else {
+    <div class="empty">No venues found{{ city() ? ' in "' + city() + '"' : '' }}.</div>
+  }
+</section>

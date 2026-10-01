@@ -1,0 +1,63 @@
+<section class="container section narrow">
+  @if (booking(); as b) {
+    @if (payment(); as p) {
+      <div class="card card-pad success-card">
+        <div class="success-icon">✓</div>
+        <h1>You're going!</h1>
+        <p class="muted">Payment received for booking <strong>{{ b.bookingReference }}</strong>.</p>
+        <dl class="summary">
+          <dt>Event</dt><dd>{{ event()?.title }}</dd>
+          <dt>When</dt><dd>{{ event()?.startTime | date: 'EEE, d MMM y · h:mm a' }}</dd>
+          <dt>Tickets</dt><dd>{{ b.quantity }} × {{ ticket()?.ticketType | label }}</dd>
+          @if (b.seatNumbers) { <dt>Seats</dt><dd>{{ b.seatNumbers }}</dd> }
+          <dt>Amount</dt><dd>{{ p.amount | currency: 'INR' }}</dd>
+          <dt>Method</dt><dd>{{ p.paymentMethod | label }}</dd>
+          <dt>Transaction</dt><dd class="mono">{{ p.transactionId }}</dd>
+        </dl>
+        <div class="actions center">
+          <a [routerLink]="['/tickets', b.id]" class="btn btn-primary">🎟️ View e-ticket</a>
+          <a routerLink="/my-bookings" class="btn btn-ghost">My bookings</a>
+        </div>
+      </div>
+    } @else if (b.status === 'CANCELLED') {
+      <div class="card card-pad empty">
+        <h2>This booking was cancelled</h2>
+        <a routerLink="/events" class="btn btn-primary">Find another event</a>
+      </div>
+    } @else {
+      <div class="card card-pad">
+        <h1>Checkout</h1>
+        <p class="muted">Booking reference <strong>{{ b.bookingReference }}</strong></p>
+
+        <dl class="summary">
+          <dt>Event</dt><dd>{{ event()?.title }}</dd>
+          <dt>When</dt><dd>{{ event()?.startTime | date: 'EEE, d MMM y · h:mm a' }}</dd>
+          <dt>Ticket</dt><dd>{{ ticket()?.ticketType | label }} · {{ ticket()?.price | currency: 'INR' }} each</dd>
+          <dt>Quantity</dt><dd>{{ b.quantity }}</dd>
+          @if (b.seatNumbers) { <dt>Seats</dt><dd>{{ b.seatNumbers }}</dd> }
+        </dl>
+        <div class="total-row big"><span>Total payable</span><strong>{{ b.totalPrice | currency: 'INR' }}</strong></div>
+
+        @if (config().razorpayEnabled) {
+          <div class="gateway-note">🔒 Secure payment via <strong>Razorpay</strong> — UPI, cards, net banking &amp; wallets</div>
+        } @else {
+          <h3>Payment method</h3>
+          <div class="method-grid">
+            @for (m of methods; track m) {
+              <button type="button" class="method" [class.active]="method() === m" (click)="method.set(m)">{{ m | label }}</button>
+            }
+          </div>
+        }
+
+        <button class="btn btn-primary btn-block btn-lg" (click)="pay()" [disabled]="paying()">
+          {{ paying() ? 'Processing…' : 'Pay ' + (b.totalPrice | currency: 'INR') }}
+        </button>
+        <p class="hint center">
+          {{ config().razorpayEnabled ? 'Razorpay Test Mode — use test card 4111 1111 1111 1111 or UPI success@razorpay.' : 'Demo payment mode (no real money).' }}
+        </p>
+      </div>
+    }
+  } @else {
+    <div class="card skeleton tall"></div>
+  }
+</section>

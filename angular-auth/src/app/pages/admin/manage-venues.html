@@ -1,0 +1,77 @@
+<div class="admin-head row-between">
+  <div><h1>Venues</h1><p class="muted">{{ venues().length }} venue(s)</p></div>
+  <button class="btn btn-primary" (click)="openCreate()">+ Add venue</button>
+</div>
+
+@if (showForm()) {
+  <form class="card card-pad form-panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <h2>{{ editingId() ? 'Edit venue' : 'New venue' }}</h2>
+    <div class="form-grid">
+      <label class="field"><span>Name *</span><input class="input" formControlName="name" />
+        @if (form.controls.name.touched && form.controls.name.invalid) { <small class="error">Min 3 characters.</small> }</label>
+      <label class="field"><span>City *</span><input class="input" formControlName="city" />
+        @if (form.controls.city.touched && form.controls.city.invalid) { <small class="error">Required.</small> }</label>
+      <label class="field span-2"><span>Address *</span><input class="input" formControlName="address" />
+        @if (form.controls.address.touched && form.controls.address.invalid) { <small class="error">Required.</small> }</label>
+      <label class="field"><span>Capacity *</span><input class="input" type="number" formControlName="capacity" />
+        @if (form.controls.capacity.touched && form.controls.capacity.invalid) { <small class="error">Must be at least 1.</small> }</label>
+      <label class="field"><span>Contact phone</span><input class="input" formControlName="contactPhone" maxlength="10" />
+        @if (form.controls.contactPhone.touched && form.controls.contactPhone.invalid) { <small class="error">10 digits.</small> }</label>
+      <label class="field"><span>Contact email</span><input class="input" type="email" formControlName="contactEmail" />
+        @if (form.controls.contactEmail.touched && form.controls.contactEmail.invalid) { <small class="error">Invalid email.</small> }</label>
+      <label class="field"><span>Image URL</span><input class="input" formControlName="imageUrl" placeholder="https://…" /></label>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">{{ editingId() ? 'Save changes' : 'Create venue' }}</button>
+      <button class="btn btn-ghost" type="button" (click)="showForm.set(false)">Cancel</button>
+    </div>
+  </form>
+}
+
+@if (seatVenue(); as sv) {
+  <div class="card card-pad form-panel">
+    <div class="row-between">
+      <h2>Seat layout · {{ sv.name }}</h2>
+      <button class="btn btn-ghost btn-sm" (click)="seatVenue.set(null)">Close</button>
+    </div>
+    <p class="muted">
+      @if (venueSeats().length) { Currently <strong>{{ venueSeats().length }}</strong> seats in <strong>{{ seatRows() }}</strong> rows. Users pick exact seats when booking events here. }
+      @else { No seat layout yet — events at this venue use general admission (quantity only). }
+    </p>
+    <form class="row" [formGroup]="layoutForm" (ngSubmit)="generateSeats()">
+      <label class="field"><span>Rows (A–Z)</span><input class="input" type="number" min="1" max="26" formControlName="rows" /></label>
+      <label class="field"><span>Seats per row</span><input class="input" type="number" min="1" max="40" formControlName="seatsPerRow" /></label>
+      <button class="btn btn-primary" type="submit" [disabled]="layoutForm.invalid">Generate seats</button>
+      @if (venueSeats().length) { <button class="btn btn-danger-ghost" type="button" (click)="clearSeats()">Clear layout</button> }
+    </form>
+    <p class="hint">Generating again only adds missing seats — existing seats and bookings are kept.</p>
+  </div>
+}
+
+<div class="card">
+  <div class="table-toolbar">
+    <input class="input" type="search" placeholder="Filter by name or city…" [value]="search()" (input)="search.set(value($event))" />
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>#</th><th>Name</th><th>City</th><th>Address</th><th>Capacity</th><th>Contact</th><th></th></tr></thead>
+      <tbody>
+        @for (v of filtered(); track v.id) {
+          <tr>
+            <td>{{ v.id }}</td>
+            <td><strong>{{ v.name }}</strong></td>
+            <td>{{ v.city }}</td>
+            <td>{{ v.address }}</td>
+            <td>{{ v.capacity }}</td>
+            <td class="small">{{ v.contactPhone }}<br />{{ v.contactEmail }}</td>
+            <td class="actions-cell">
+              <button class="btn btn-ghost btn-sm" (click)="openSeats(v)">💺 Seats</button>
+              <button class="btn btn-ghost btn-sm" (click)="openEdit(v)">Edit</button>
+              <button class="btn btn-danger-ghost btn-sm" (click)="remove(v)">Delete</button>
+            </td>
+          </tr>
+        } @empty { <tr><td colspan="7" class="muted">No venues found.</td></tr> }
+      </tbody>
+    </table>
+  </div>
+</div>

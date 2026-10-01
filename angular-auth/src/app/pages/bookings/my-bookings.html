@@ -1,0 +1,58 @@
+<section class="page-head">
+  <div class="container">
+    <h1>My Bookings</h1>
+    <p>{{ bookings().length }} booking(s) · {{ totalSpent() | currency: 'INR' }} paid</p>
+  </div>
+</section>
+
+<section class="container section">
+  <div class="tabs">
+    @for (t of ['ALL', 'CONFIRMED', 'CANCELLED']; track t) {
+      <button class="tab" [class.active]="tab() === t" (click)="tab.set($any(t))">{{ t | label }}</button>
+    }
+  </div>
+
+  @if (!loaded()) {
+    <div class="card skeleton"></div>
+  } @else {
+    @for (b of visible(); track b.id) {
+      <div class="card booking-row" [class.cancelled]="b.status === 'CANCELLED'">
+        <div class="booking-main">
+          <span class="ref">{{ b.bookingReference }}</span>
+          <h3><a [routerLink]="['/events', b.eventId]">{{ events().get(b.eventId)?.title ?? 'Event #' + b.eventId }}</a></h3>
+          <p class="meta">
+            📅 {{ events().get(b.eventId)?.startTime | date: 'EEE, d MMM y · h:mm a' }} ·
+            🎟️ {{ b.quantity }} × {{ tickets().get(b.ticketId)?.ticketType | label }}
+            @if (b.seatNumbers) { · 💺 Seats {{ b.seatNumbers }} }
+          </p>
+          <p class="meta small">Booked on {{ b.bookingTime | date: 'd MMM y, h:mm a' }}</p>
+        </div>
+        <div class="booking-side">
+          <strong class="price">{{ b.totalPrice | currency: 'INR' }}</strong>
+          <span class="badge badge-{{ b.status.toLowerCase() }}">{{ b.status | label }}</span>
+          @if (payments().get(b.id); as p) {
+            <span class="badge badge-paid">Paid · {{ p.paymentMethod | label }}</span>
+          } @else if (b.status !== 'CANCELLED') {
+            <span class="badge badge-pending">Payment pending</span>
+          }
+          <div class="actions">
+            @if (b.status !== 'CANCELLED' && payments().has(b.id)) {
+              <a class="btn btn-primary btn-sm" [routerLink]="['/tickets', b.id]">🎟️ View ticket</a>
+            }
+            @if (b.status !== 'CANCELLED' && !payments().has(b.id)) {
+              <a class="btn btn-primary btn-sm" [routerLink]="['/checkout', b.id]">Pay now</a>
+            }
+            @if (b.status !== 'CANCELLED') {
+              <button class="btn btn-danger-ghost btn-sm" (click)="cancel(b)">Cancel</button>
+            }
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <div class="empty">
+        <p>No bookings here yet.</p>
+        <a routerLink="/events" class="btn btn-primary">Find an event</a>
+      </div>
+    }
+  }
+</section>

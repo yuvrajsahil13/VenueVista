@@ -1,0 +1,57 @@
+<section class="hero">
+  <div class="container hero-inner">
+    <div>
+      <span class="eyebrow light">Event ticketing &amp; venue management</span>
+      <h1>Discover events. Book tickets. Manage venues — all in one place.</h1>
+      <p>Concerts, conferences, workshops and more at the best venues near you.</p>
+      <div class="hero-actions">
+        <a routerLink="/events" class="btn btn-primary btn-lg">Explore events</a>
+        <a routerLink="/venues" class="btn btn-light btn-lg">Browse venues</a>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><strong>{{ events().length }}</strong><span>Events</span></div>
+      <div class="stat"><strong>{{ venues().length }}</strong><span>Venues</span></div>
+      <div class="stat"><strong>{{ cities() }}</strong><span>Cities</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="container section">
+  <div class="section-head">
+    <h2>Browse by category</h2>
+  </div>
+  <div class="chips">
+    @for (c of categories; track c) {
+      <a class="chip" [routerLink]="['/events']" [queryParams]="{ category: c }">{{ c | label }}</a>
+    }
+  </div>
+</section>
+
+<section class="container section">
+  <div class="section-head">
+    <h2>Upcoming events</h2>
+    <a routerLink="/events" class="link">View all →</a>
+  </div>
+  @if (!loaded()) {
+    <div class="grid">@for (i of [1, 2, 3]; track i) { <div class="card skeleton"></div> }</div>
+  } @else if (featured().length) {
+    <div class="grid">
+      @for (e of featured(); track e.id) { <app-event-card [event]="e" [venue]="venueMap().get(e.venueId)" /> }
+    </div>
+  } @else {
+    <div class="empty">No published events yet.</div>
+  }
+</section>
+
+@if (!auth.isLoggedIn()) {
+  <section class="container section">
+    <div class="cta">
+      <div>
+        <h2>Hosting an event?</h2>
+        <p>Create an organizer account to list venues, publish events and sell tickets.</p>
+      </div>
+      <a routerLink="/register" class="btn btn-primary btn-lg">Get started</a>
+    </div>
+  </section>
+}

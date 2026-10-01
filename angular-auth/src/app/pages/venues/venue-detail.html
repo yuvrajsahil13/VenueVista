@@ -1,0 +1,55 @@
+@if (notFound()) {
+  <div class="container section empty">
+    <h2>Venue not found</h2>
+    <a routerLink="/venues" class="btn btn-primary">Back to venues</a>
+  </div>
+} @else if (venue(); as v) {
+  <section class="detail-hero venue-hero"
+           [style.background-image]="v.imageUrl ? 'linear-gradient(rgba(15,23,42,.55), rgba(15,23,42,.85)), url(' + v.imageUrl + ')' : null">
+    <div class="container">
+      <a routerLink="/venues" class="back-link">← All venues</a>
+      <h1>{{ v.name }}</h1>
+      <p class="hero-meta">📍 {{ v.address }}, {{ v.city }} &nbsp;·&nbsp; 👥 Capacity {{ v.capacity }}</p>
+      @if (reviews().length) { <p class="hero-meta">{{ stars(avg()) }} {{ avg().toFixed(1) }} from {{ reviews().length }} review(s)</p> }
+    </div>
+  </section>
+
+  <section class="container section detail-layout">
+    <div class="detail-main">
+      <div class="section-head"><h2>Events at this venue</h2></div>
+      @if (events().length) {
+        <div class="grid grid-2">
+          @for (e of events(); track e.id) { <app-event-card [event]="e" [venue]="v" /> }
+        </div>
+      } @else {
+        <div class="empty">No events scheduled here yet.</div>
+      }
+
+      <div class="card card-pad">
+        <h2>Reviews</h2>
+        @for (r of reviews(); track r.id) {
+          <div class="review">
+            <div class="review-head">
+              <span class="avatar sm">{{ (users().get(r.userId)?.name ?? 'G').charAt(0) }}</span>
+              <strong>{{ users().get(r.userId)?.name ?? 'Guest' }}</strong>
+              <span class="rating">{{ stars(r.rating) }}</span>
+            </div>
+            <p>{{ r.comment }}</p>
+          </div>
+        } @empty {
+          <p class="muted">No reviews yet. Attend an event here and leave one from the event page!</p>
+        }
+      </div>
+    </div>
+
+    <aside class="detail-side">
+      <div class="card card-pad">
+        <h2>Contact</h2>
+        <p>📞 {{ v.contactPhone || 'Not provided' }}</p>
+        <p>✉️ {{ v.contactEmail || 'Not provided' }}</p>
+      </div>
+    </aside>
+  </section>
+} @else {
+  <div class="container section"><div class="card skeleton tall"></div></div>
+}

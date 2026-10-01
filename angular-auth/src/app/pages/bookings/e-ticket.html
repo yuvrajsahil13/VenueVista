@@ -1,0 +1,42 @@
+<section class="container section narrow">
+  @if (booking(); as b) {
+    <div class="eticket">
+      <div class="eticket-head">
+        <div>
+          <span class="eyebrow light">EventVista e-ticket</span>
+          <h1>{{ event()?.title }}</h1>
+          <p>{{ event()?.startTime | date: 'EEEE, d MMMM y · h:mm a' }}</p>
+        </div>
+        <span class="badge badge-paid">Paid</span>
+      </div>
+
+      <div class="eticket-body">
+        <div class="eticket-info">
+          <dl class="summary">
+            <dt>Name</dt><dd>{{ auth.user()?.name }}</dd>
+            <dt>Venue</dt><dd>{{ venue()?.name }}<br /><small class="muted">{{ venue()?.address }}, {{ venue()?.city }}</small></dd>
+            <dt>Ticket</dt><dd>{{ b.quantity }} × {{ ticket()?.ticketType | label }}</dd>
+            <dt>Seats</dt><dd>{{ b.seatNumbers || 'General admission' }}</dd>
+            <dt>Paid</dt><dd>{{ payment()?.amount | currency: 'INR' }} · {{ payment()?.paymentMethod | label }}</dd>
+            <dt>Booking ref</dt><dd class="mono">{{ b.bookingReference }}</dd>
+            <dt>Transaction</dt><dd class="mono">{{ payment()?.transactionId }}</dd>
+          </dl>
+        </div>
+        <div class="eticket-qr">
+          @if (qr()) { <img [src]="qr()" alt="Ticket QR code" /> } @else { <div class="qr-placeholder">Generating…</div> }
+          <small>Show this QR at the entrance</small>
+        </div>
+      </div>
+      <div class="eticket-tear"></div>
+      <p class="eticket-foot">Please carry a valid photo ID. Gates open 45 minutes before the start time.</p>
+    </div>
+
+    <div class="actions center no-print">
+      <button class="btn btn-primary" (click)="print()">🖨️ Print / Save as PDF</button>
+      <button class="btn btn-ghost" (click)="download()" [disabled]="!qr()">⬇ Download QR</button>
+      <a routerLink="/my-bookings" class="btn btn-ghost">Back to My Bookings</a>
+    </div>
+  } @else {
+    <div class="card skeleton tall"></div>
+  }
+</section>

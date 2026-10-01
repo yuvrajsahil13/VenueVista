@@ -1,0 +1,32 @@
+<header class="navbar">
+  <div class="container nav-inner">
+    <a routerLink="/" class="brand"><span class="brand-mark">EV</span> EventVista</a>
+
+    <button class="nav-toggle" (click)="menuOpen.set(!menuOpen())" aria-label="Toggle menu">☰</button>
+
+    <nav class="nav-links" [class.open]="menuOpen()" (click)="menuOpen.set(false)">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/events" routerLinkActive="active">Events</a>
+      <a routerLink="/venues" routerLinkActive="active">Venues</a>
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/my-bookings" routerLinkActive="active">My Bookings</a>
+        @if (auth.canManage()) {
+          <a routerLink="/admin" routerLinkActive="active">{{ auth.isAdmin() ? 'Admin' : 'Organizer' }} Panel</a>
+        }
+      }
+    </nav>
+
+    <div class="nav-user">
+      @if (auth.user(); as user) {
+        <span class="user-chip">
+          <span class="avatar">{{ user.name.charAt(0).toUpperCase() }}</span>
+          <span class="user-meta"><strong>{{ user.name }}</strong><small>{{ user.role | label }}</small></span>
+        </span>
+        <button class="btn btn-ghost btn-sm" (click)="logout()">Logout</button>
+      } @else {
+        <a routerLink="/login" class="btn btn-ghost btn-sm">Login</a>
+        <a routerLink="/register" class="btn btn-primary btn-sm">Sign up</a>
+      }
+    </div>
+  </div>
+</header>

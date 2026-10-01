@@ -1,0 +1,102 @@
+<div class="admin-head row-between">
+  <div><h1>Events &amp; Tickets</h1><p class="muted">{{ visible().length }} event(s)</p></div>
+  <button class="btn btn-primary" (click)="openCreate()">+ New event</button>
+</div>
+
+@if (showForm()) {
+  <form class="card card-pad form-panel" [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <h2>{{ editingId() ? 'Edit event' : 'New event' }}</h2>
+    @if (venues().length === 0) { <p class="notice">Create a venue first — every event needs one.</p> }
+    <div class="form-grid">
+      <label class="field span-2"><span>Title *</span><input class="input" formControlName="title" />
+        @if (form.controls.title.touched && form.controls.title.invalid) { <small class="error">Min 3 characters.</small> }</label>
+      <label class="field span-2"><span>Description</span><textarea class="input" rows="3" formControlName="description"></textarea></label>
+      <label class="field"><span>Category *</span>
+        <select class="input" formControlName="category">
+          @for (c of categories; track c) { <option [value]="c">{{ c | label }}</option> }
+        </select></label>
+      <label class="field"><span>Status *</span>
+        <select class="input" formControlName="status">
+          @for (s of statuses; track s) { <option [value]="s">{{ s | label }}</option> }
+        </select></label>
+      <label class="field span-2"><span>Venue *</span>
+        <select class="input" formControlName="venueId">
+          <option [ngValue]="0" disabled>Select a venue</option>
+          @for (v of venues(); track v.id) { <option [ngValue]="v.id">{{ v.name }} — {{ v.city }}</option> }
+        </select>
+        @if (form.controls.venueId.touched && form.controls.venueId.invalid) { <small class="error">Pick a venue.</small> }</label>
+      <label class="field"><span>Starts *</span><input class="input" type="datetime-local" formControlName="startTime" />
+        @if (form.controls.startTime.touched && form.controls.startTime.invalid) { <small class="error">Required.</small> }</label>
+      <label class="field"><span>Ends *</span><input class="input" type="datetime-local" formControlName="endTime" />
+        @if (form.hasError('endBeforeStart')) { <small class="error">End must be after start.</small> }</label>
+      <label class="field span-2"><span>Banner image URL</span><input class="input" formControlName="bannerUrl" placeholder="https://…" /></label>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit">{{ editingId() ? 'Save changes' : 'Create event' }}</button>
+      <button class="btn btn-ghost" type="button" (click)="showForm.set(false)">Cancel</button>
+    </div>
+  </form>
+}
+
+@if (ticketEvent(); as te) {
+  <div class="card card-pad form-panel">
+    <div class="row-between">
+      <h2>Tickets · {{ te.title }}</h2>
+      <button class="btn btn-ghost btn-sm" (click)="ticketEvent.set(null)">Close</button>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Type</th><th>Price</th><th>Available / Total</th><th></th></tr></thead>
+        <tbody>
+          @for (t of tickets(); track t.id) {
+            <tr>
+              <td><strong>{{ t.ticketType | label }}</strong></td>
+              <td>{{ t.price | currency: 'INR' }}</td>
+              <td>{{ t.availableQuantity }} / {{ t.totalQuantity }}</td>
+              <td class="actions-cell"><button class="btn btn-danger-ghost btn-sm" (click)="removeTicket(t)">Delete</button></td>
+            </tr>
+          } @empty { <tr><td colspan="4" class="muted">No ticket tiers yet — add one below so people can book.</td></tr> }
+        </tbody>
+      </table>
+    </div>
+    <form class="row ticket-add" [formGroup]="ticketForm" (ngSubmit)="addTicket()">
+      <label class="field"><span>Type</span>
+        <select class="input" formControlName="ticketType">
+          @for (t of ticketTypes; track t) { <option [value]="t">{{ t | label }}</option> }
+        </select></label>
+      <label class="field"><span>Price (₹)</span><input class="input" type="number" min="0" formControlName="price" /></label>
+      <label class="field"><span>Quantity</span><input class="input" type="number" min="1" formControlName="totalQuantity" /></label>
+      <button class="btn btn-primary" type="submit" [disabled]="ticketForm.invalid">Add tier</button>
+    </form>
+  </div>
+}
+
+<div class="card">
+  <div class="table-toolbar">
+    <select class="input" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+      <option value="">All statuses</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ s | label }}</option> }
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Event</th><th>Category</th><th>Venue</th><th>Starts</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        @for (e of visible(); track e.id) {
+          <tr>
+            <td><a [routerLink]="['/events', e.id]" class="link"><strong>{{ e.title }}</strong></a></td>
+            <td>{{ e.category | label }}</td>
+            <td>{{ venueMap().get(e.venueId)?.name ?? '#' + e.venueId }}</td>
+            <td>{{ e.startTime | date: 'd MMM y, h:mm a' }}</td>
+            <td><span class="badge badge-{{ e.status.toLowerCase() }}">{{ e.status | label }}</span></td>
+            <td class="actions-cell">
+              <button class="btn btn-ghost btn-sm" (click)="openTickets(e)">Tickets</button>
+              <button class="btn btn-ghost btn-sm" (click)="openEdit(e)">Edit</button>
+              <button class="btn btn-danger-ghost btn-sm" (click)="remove(e)">Delete</button>
+            </td>
+          </tr>
+        } @empty { <tr><td colspan="6" class="muted">No events yet.</td></tr> }
+      </tbody>
+    </table>
+  </div>
+</div>

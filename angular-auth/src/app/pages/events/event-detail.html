@@ -1,0 +1,141 @@
+@if (notFound()) {
+  <div class="container section empty">
+    <h2>Event not found</h2>
+    <a routerLink="/events" class="btn btn-primary">Back to events</a>
+  </div>
+} @else if (event(); as e) {
+  <section class="detail-hero cat-{{ e.category.toLowerCase() }}"
+           [style.background-image]="e.bannerUrl ? 'linear-gradient(rgba(15,23,42,.55), rgba(15,23,42,.85)), url(' + e.bannerUrl + ')' : null">
+    <div class="container">
+      <a routerLink="/events" class="back-link">← All events</a>
+      <div class="badges">
+        <span class="badge badge-light">{{ e.category | label }}</span>
+        <span class="badge badge-{{ e.status.toLowerCase() }}">{{ e.status | label }}</span>
+      </div>
+      <h1>{{ e.title }}</h1>
+      <p class="hero-meta">
+        📅 {{ e.startTime | date: 'EEEE, d MMMM y, h:mm a' }} – {{ e.endTime | date: 'h:mm a' }}
+        @if (venue(); as v) { &nbsp;·&nbsp; 📍 {{ v.name }}, {{ v.city }} }
+      </p>
+    </div>
+  </section>
+
+  <section class="container section detail-layout">
+    <div class="detail-main">
+      <div class="card card-pad">
+        <h2>About this event</h2>
+        <p class="prose">{{ e.description || 'No description provided.' }}</p>
+      </div>
+
+      @if (venue(); as v) {
+        <div class="card card-pad">
+          <h2>Venue</h2>
+          <h3>{{ v.name }}</h3>
+          <p class="muted">{{ v.address }}, {{ v.city }} · Capacity {{ v.capacity }}</p>
+          @if (v.contactPhone || v.contactEmail) {
+            <p class="muted small">Contact: {{ v.contactPhone }} {{ v.contactEmail }}</p>
+          }
+          <a [routerLink]="['/venues', v.id]" class="link">View venue →</a>
+        </div>
+      }
+
+      <div class="card card-pad">
+        <div class="section-head">
+          <h2>Reviews</h2>
+          @if (reviewList().length) {
+            <span class="rating">{{ stars(avgRating()) }} <small>{{ avgRating().toFixed(1) }} ({{ reviewList().length }})</small></span>
+          }
+        </div>
+
+        @if (auth.isLoggedIn()) {
+          <form class="review-form" [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+            <div class="row">
+              <label class="field">
+                <span>Rating</span>
+                <select class="input" formControlName="rating">
+                  @for (r of [5, 4, 3, 2, 1]; track r) { <option [ngValue]="r">{{ r }} ★</option> }
+                </select>
+              </label>
+              <label class="field grow">
+                <span>Your review</span>
+                <input class="input" formControlName="comment" placeholder="What did you think?" />
+                @if (reviewForm.controls.comment.touched && reviewForm.controls.comment.invalid) {
+                  <small class="error">Please write at least 5 characters.</small>
+                }
+              </label>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">Post review</button>
+          </form>
+        } @else {
+          <p class="muted"><a routerLink="/login" class="link">Log in</a> to write a review.</p>
+        }
+
+        @for (r of reviewList(); track r.id) {
+          <div class="review">
+            <div class="review-head">
+              <span class="avatar sm">{{ (userMap().get(r.userId)?.name ?? 'G').charAt(0) }}</span>
+              <strong>{{ userMap().get(r.userId)?.name ?? 'Guest' }}</strong>
+              <span class="rating">{{ stars(r.rating) }}</span>
+            </div>
+            <p>{{ r.comment }}</p>
+          </div>
+        } @empty {
+          <p class="muted">No reviews yet.</p>
+        }
+      </div>
+    </div>
+
+    <aside class="detail-side">
+      <div class="card card-pad sticky">
+        <h2>Tickets</h2>
+        @if (ticketList().length === 0) {
+          <p class="muted">Tickets are not on sale yet.</p>
+        } @else {
+          <form [formGroup]="bookingForm" (ngSubmit)="book()">
+            <div class="ticket-options">
+              @for (t of ticketList(); track t.id) {
+                <label class="ticket-option" [class.disabled]="t.availableQuantity === 0">
+                  <input type="radio" formControlName="ticketId" [value]="t.id" [attr.disabled]="t.availableQuantity === 0 ? true : null" />
+                  <span class="grow">
+                    <strong>{{ t.ticketType | label }}</strong>
+                    <small class="muted">{{ t.availableQuantity > 0 ? t.availableQuantity + ' left' : 'Sold out' }}</small>
+                  </span>
+                  <span class="price">{{ t.price | currency: 'INR' }}</span>
+                </label>
+              }
+            </div>
+
+            @if (seatMode()) {
+              <div class="field">
+                <span>Choose your seats <small class="muted">(max {{ maxSeats() }})</small></span>
+                <app-seat-map [seats]="seats()" [reserved]="reservedSeats()" [max]="maxSeats()" [(selected)]="selectedSeats" />
+                <p class="selected-seats">
+                  @if (selectedSeats().length) { Selected: <strong>{{ selectedSeats().join(', ') }}</strong> }
+                  @else { <span class="muted">Tap seats to select them</span> }
+                </p>
+              </div>
+            } @else {
+              <label class="field">
+                <span>Quantity</span>
+                <input class="input" type="number" min="1" max="10" formControlName="quantity" />
+                @if (bookingForm.controls.quantity.invalid) { <small class="error">Choose between 1 and 10 tickets.</small> }
+              </label>
+            }
+
+            <div class="total-row"><span>Total ({{ effectiveQty() }} ticket{{ effectiveQty() === 1 ? '' : 's' }})</span><strong>{{ total() | currency: 'INR' }}</strong></div>
+
+            @if (bookable()) {
+              <button class="btn btn-primary btn-block" type="submit" [disabled]="submitting() || (seatMode() ? selectedSeats().length === 0 : bookingForm.invalid)">
+                {{ auth.isLoggedIn() ? (submitting() ? 'Booking…' : 'Book now') : 'Log in to book' }}
+              </button>
+            } @else {
+              <p class="notice">Booking is closed — this event is {{ e.status | label | lowercase }}.</p>
+            }
+          </form>
+        }
+      </div>
+    </aside>
+  </section>
+} @else {
+  <div class="container section"><div class="card skeleton tall"></div></div>
+}

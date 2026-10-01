@@ -1,0 +1,51 @@
+<div class="admin-head">
+  <h1>Dashboard</h1>
+  <p class="muted">Hello {{ auth.user()?.name }}, here's what's happening on EventVista.</p>
+</div>
+
+<div class="kpis">
+  <div class="kpi card"><span>{{ auth.isAdmin() ? 'Total events' : 'My events' }}</span><strong>{{ events().length }}</strong></div>
+  <div class="kpi card"><span>Venues</span><strong>{{ venues().length }}</strong></div>
+  @if (auth.isAdmin()) {
+    <div class="kpi card"><span>Active bookings</span><strong>{{ activeBookings() }}</strong></div>
+    <div class="kpi card"><span>Tickets sold</span><strong>{{ ticketsSold() }}</strong></div>
+    <div class="kpi card"><span>Revenue</span><strong>{{ revenue() | currency: 'INR' : 'symbol' : '1.0-0' }}</strong></div>
+    <div class="kpi card"><span>Users</span><strong>{{ users().length }}</strong></div>
+  }
+</div>
+
+<div class="dash-grid">
+  <div class="card card-pad">
+    <h2>Events by category</h2>
+    @for (c of byCategory(); track c.category) {
+      <div class="bar-row">
+        <span>{{ c.category | label }}</span>
+        <div class="bar"><div class="bar-fill" [style.width.%]="c.pct"></div></div>
+        <strong>{{ c.count }}</strong>
+      </div>
+    } @empty { <p class="muted">No events yet.</p> }
+  </div>
+
+  @if (auth.isAdmin()) {
+    <div class="card card-pad">
+      <h2>Recent bookings</h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Ref</th><th>User</th><th>Event</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            @for (b of recent(); track b.id) {
+              <tr>
+                <td class="mono">{{ b.bookingReference }}</td>
+                <td>{{ userMap().get(b.userId)?.name ?? '#' + b.userId }}</td>
+                <td>{{ eventMap().get(b.eventId)?.title ?? '#' + b.eventId }}</td>
+                <td>{{ b.totalPrice | currency: 'INR' }}</td>
+                <td><span class="badge badge-{{ b.status.toLowerCase() }}">{{ b.status | label }}</span></td>
+              </tr>
+            } @empty { <tr><td colspan="5" class="muted">No bookings yet.</td></tr> }
+          </tbody>
+        </table>
+      </div>
+      <p class="muted small">Last updated {{ now | date: 'medium' }}</p>
+    </div>
+  }
+</div>

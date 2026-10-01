@@ -1,0 +1,39 @@
+<section class="page-head">
+  <div class="container">
+    <h1>Events</h1>
+    <p>Find something worth showing up for.</p>
+  </div>
+</section>
+
+<section class="container section">
+  <div class="filters card">
+    <input class="input grow" type="search" placeholder="Search by title, venue or city…"
+           [value]="search()" (input)="search.set(value($event))" />
+    <select class="input" [value]="category()" (change)="category.set($any(value($event)))">
+      <option value="">All categories</option>
+      @for (c of categories; track c) { <option [value]="c">{{ c | label }}</option> }
+    </select>
+    <select class="input" [value]="status()" (change)="status.set(value($event))">
+      <option value="">Any status</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ s | label }}</option> }
+    </select>
+    <select class="input" [value]="sort()" (change)="sort.set($any(value($event)))">
+      <option value="date">Sort: Date</option>
+      <option value="title">Sort: Title</option>
+    </select>
+    <button class="btn btn-ghost" (click)="reset()">Reset</button>
+  </div>
+
+  @if (!loaded()) {
+    <div class="grid">@for (i of [1, 2, 3, 4, 5, 6]; track i) { <div class="card skeleton"></div> }</div>
+  } @else {
+    <p class="muted result-count">{{ filtered().length }} event(s) found</p>
+    @if (filtered().length) {
+      <div class="grid">
+        @for (e of filtered(); track e.id) { <app-event-card [event]="e" [venue]="venueMap().get(e.venueId)" /> }
+      </div>
+    } @else {
+      <div class="empty">No events match your filters. <button class="btn btn-ghost btn-sm" (click)="reset()">Clear filters</button></div>
+    }
+  }
+</section>
